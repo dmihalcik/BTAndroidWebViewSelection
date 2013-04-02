@@ -1,5 +1,7 @@
 package com.blahti.drag;
 
+import android.view.View;
+
 /**
  * Interface to receive notifications when a drag starts or stops
  */
@@ -15,7 +17,7 @@ public interface DragListener {
      */
     void onDragStart(DragSource source, Object info, int dragAction);
     
-    void onDragMove();
+    void onDragMove( int x, int y);
     
     /**
      * The drag has eneded

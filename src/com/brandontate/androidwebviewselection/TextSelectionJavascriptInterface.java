@@ -23,12 +23,6 @@ public class TextSelectionJavascriptInterface {
 
 	private Handler mHandler;
 
-	private Runnable mStartSelectionMode = new MyRunnable(){
-		@Override
-		protected void exec(TextSelectionJavascriptInterfaceListener listener) {
-			listener.tsjiStartSelectionMode();
-		}};
-	
 	/**
 	 * Constructor accepting context.
 	 * @param c
@@ -75,7 +69,11 @@ public class TextSelectionJavascriptInterface {
 	 */
 	public void startSelectionMode(){
 		if( null == listener ) return;
-		mHandler.post( mStartSelectionMode );
+		mHandler.post( new MyRunnable(){
+			@Override
+			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
+				listener.tsjiStartSelectionMode();
+			}} );
 	}
 	
 	private abstract class MyRunnable implements Runnable {
@@ -109,12 +107,12 @@ public class TextSelectionJavascriptInterface {
 	 * @param showHighlight
 	 * @param showUnHighlight
 	 */
-	public void selectionChanged(final String range, final String text, final String handleBounds, final String menuBounds){
+	public void selectionChanged(final String range, final String text, final String handleBounds, final String menuBounds, final boolean flipped){
 		if( null == listener ) return;
 		mHandler.post( new MyRunnable() {
 			@Override
 			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
-				listener.tsjiSelectionChanged(range, text, handleBounds, menuBounds);
+				listener.tsjiSelectionChanged(range, text, handleBounds, menuBounds, flipped);
 			}
 		} );
 	}

@@ -28,7 +28,7 @@ import android.view.View;
 import android.widget.Toast;
 
 /**
- * A ViewGroup that coordinates dragging across its dscendants.
+ * A ViewGroup that coordinates dragging across its descendants.
  *
  * <p> This class used DragLayer in the Android Launcher activity as a model.
  * It is a bit different in several respects:

@@ -29,6 +29,7 @@ import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ImageView;
 
 public class BTWebView extends WebView implements TextSelectionJavascriptInterfaceListener, 
@@ -37,8 +38,12 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	/** The logging tag. */
 	private static final String TAG = "BTWebView";
 
+	private static final boolean D = false;
+
 	/** Context. */
 	protected	Context	ctx;
+	
+	protected float mCurrentScale = 0;
 	
 	/** The context menu. */
 	private QuickAction mContextMenu;
@@ -57,9 +62,6 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	
 	/** The selection bounds. */
 	private Rect mSelectionBounds = null;
-	
-	/** The previously selected region. */
-	protected Region lastSelectedRegion = null;
 	
 	/** The selected range. */
 	protected String selectedRange = "";
@@ -130,8 +132,8 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		
-		float xPoint = getDensityIndependentValue(event.getX(), ctx) / getDensityIndependentValue(this.getScale(), ctx);
-		float yPoint = getDensityIndependentValue(event.getY(), ctx) / getDensityIndependentValue(this.getScale(), ctx);
+		float xPoint = getDensityIndependentValue(event.getX(), ctx) / getDensityIndependentValue(currentScale(), ctx);
+		float yPoint = getDensityIndependentValue(event.getY(), ctx) / getDensityIndependentValue(currentScale(), ctx);
 		
 		// TODO: Need to update this to use this.getScale() as a factor.
 		
@@ -185,6 +187,14 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		return false;
 	}
 	
+	@SuppressWarnings("deprecation")
+	private float currentScale() {
+		if( 0 == mCurrentScale ) {
+			mCurrentScale = getScale();
+		}
+		return mCurrentScale;
+	}
+
 	@Override 
 	public boolean onLongClick(View v){
 		
@@ -234,15 +244,16 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		this.textSelectionJSInterface = new TextSelectionJavascriptInterface(this);		
 		this.addJavascriptInterface(this.textSelectionJSInterface, this.textSelectionJSInterface.getInterfaceName());
 		
+		this.setWebViewClient( new WebViewClient() {
+			public void onScaleChanged(WebView view, float oldScale, float newScale) {
+				mCurrentScale = newScale;
+			}
+		} );
+		
 		
 		// Create the selection handles
 		createSelectionLayer(context);
 		
-		
-		// Set to the empty region
-		Region region = new Region();
-		region.setEmpty();
-		this.lastSelectedRegion = region;
 		
 		// Load up the android asset file
 		String filePath = "file:///android_asset/content.html";
@@ -381,6 +392,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		}
 
 	private boolean dragging;
+	private int eventsActive = 0;
 	
 	/**
 	 * Checks to see if this view is in selection mode.
@@ -417,50 +429,69 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	@Override
 	public void onDragStart(DragSource source, Object info, int dragAction) {
 		// TODO Auto-generated method stub
-		
 		dragging = true;
+		eventsActive = 0;
 	}
 
 	@Override
-	public void onDragMove() {
-		// TODO Auto-generated method stub
-		
+	public void onDragMove(int x, int y) {
+		if( D ) Log.d( TAG, "onDragMove" );
+		if( 0 == eventsActive ) {
+			boolean touchedStart = mLastTouchedSelectionHandle == SELECTION_START_HANDLE;
+			boolean touchedEnd = mLastTouchedSelectionHandle == SELECTION_END_HANDLE;
+			if(touchedStart){
+				x = x - this.getScrollX() + mStartSelectionHandle.getWidth();
+				y = y - this.getScrollY();
+				saveSelectionStart(x, y);
+			} else if(touchedEnd) {
+				x -= this.getScrollX();
+				y -= this.getScrollY();
+				saveSelectionEnd(x, y);
+			}
+		}
 	}
-
 	@Override
 	public void onDragEnd() {
-		// TODO Auto-generated method stub
+		if( D ) Log.d( TAG, "onDragEnd" );
 		dragging = false;
-		saveDrag();
-	}
-	protected void saveDrag() {
-		
-		MyAbsoluteLayout.LayoutParams startHandleParams = (MyAbsoluteLayout.LayoutParams) this.mStartSelectionHandle.getLayoutParams();
-		MyAbsoluteLayout.LayoutParams endHandleParams = (MyAbsoluteLayout.LayoutParams) this.mEndSelectionHandle.getLayoutParams();
-		
-		float scale = getDensityIndependentValue(this.getScale(), ctx);
-		
-		float startX = startHandleParams.x - this.getScrollX() + mStartSelectionHandle.getWidth();
-		float startY = startHandleParams.y - this.getScrollY();
-		float endX = endHandleParams.x - this.getScrollX();
-		float endY = endHandleParams.y - this.getScrollY();
-		
-		startX = getDensityIndependentValue(startX, ctx) / scale;
-		startY = getDensityIndependentValue(startY, ctx) / scale;
-		endX = getDensityIndependentValue(endX, ctx) / scale;
-		endY = getDensityIndependentValue(endY, ctx) / scale;
-		
-		
-		if(mLastTouchedSelectionHandle == SELECTION_START_HANDLE && startX > 0 && startY > 0){
-			String saveStartString = String.format(Locale.US, "javascript: android.selection.setStartPos(%f, %f);", startX, startY);
-			this.loadUrl(saveStartString);
+		boolean touchedStart = mLastTouchedSelectionHandle == SELECTION_START_HANDLE;
+		boolean touchedEnd = mLastTouchedSelectionHandle == SELECTION_END_HANDLE;
+		if( touchedStart ){
+			MyAbsoluteLayout.LayoutParams startHandleParams = (MyAbsoluteLayout.LayoutParams) this.mStartSelectionHandle.getLayoutParams();
+			float x = startHandleParams.x - this.getScrollX() + mStartSelectionHandle.getWidth();
+			float y = startHandleParams.y - this.getScrollY();
+			saveSelectionStart(x, y);
 		}
-			
-		if(mLastTouchedSelectionHandle == SELECTION_END_HANDLE && endX > 0 && endY > 0){
+		if( touchedEnd ) {
+			MyAbsoluteLayout.LayoutParams endHandleParams = (MyAbsoluteLayout.LayoutParams) this.mEndSelectionHandle.getLayoutParams();
+			float x = endHandleParams.x - this.getScrollX();
+			float y = endHandleParams.y - this.getScrollY();
+			saveSelectionEnd(x, y);
+		}
+	}
+
+	public void saveSelectionEnd(float x, float y) {
+		final float scale = getDensityIndependentValue(currentScale(), ctx);
+		float endX = getDensityIndependentValue(x, ctx) / scale;
+		float endY = getDensityIndependentValue(y, ctx) / scale;
+		if(endX > 0 && endY > 0){
 			String saveEndString = String.format(Locale.US, "javascript: android.selection.setEndPos(%f, %f);", endX, endY);
+			eventsActive++;
+			if( D ) Log.d( TAG, "dragging: " + saveEndString );
 			this.loadUrl(saveEndString);
 		}
-		
+	}
+
+	public void saveSelectionStart(float x, float y) {
+		final float scale = getDensityIndependentValue(currentScale(), ctx);
+		final float startX = getDensityIndependentValue(x, ctx) / scale;
+		final float startY = getDensityIndependentValue(y, ctx) / scale;
+		if(startX > 0 && startY > 0){
+			String saveStartString = String.format(Locale.US, "javascript: android.selection.setStartPos(%f, %f);", startX, startY);
+			eventsActive++;
+			if( D ) Log.d( TAG, "dragging: " + saveStartString );
+			this.loadUrl(saveStartString);
+		}
 	}
 	
 	
@@ -612,11 +643,14 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	 * @param showHighlight
 	 * @param showUnHighlight
 	 */
-	public void tsjiSelectionChanged(String range, String text, String handleBounds, String menuBounds){
+	public void tsjiSelectionChanged(String range, String text, String handleBounds, String menuBounds, boolean flipped){
+		eventsActive--;
+		if( dragging ) return;
+		if( 0 < eventsActive ) return;
 		try {
 			JSONObject selectionBoundsObject = new JSONObject(handleBounds);
 			
-			float scale = getDensityIndependentValue(this.getScale(), ctx);
+			float scale = getDensityIndependentValue(currentScale(), ctx);
 			
 			Rect handleRect = new Rect();
 			handleRect.left = (int) (getDensityDependentValue(selectionBoundsObject.getInt("left"), getContext()) * scale);
@@ -644,6 +678,10 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 			this.showContextMenu(displayRect);
 			
 			drawSelectionHandles();
+			if(flipped) {
+				if( D ) Log.d( TAG, "flipping carets");
+				this.loadUrl("javascript: android.selection.flipCarets();");
+			}
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

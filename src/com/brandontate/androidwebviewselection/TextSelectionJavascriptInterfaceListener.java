@@ -27,8 +27,9 @@ public interface TextSelectionJavascriptInterfaceListener {
 	 * @param text
 	 * @param handleBounds
 	 * @param menuBounds
+	 * @param flipped 
 	 */
-	public abstract void tsjiSelectionChanged(String range, String text, String handleBounds, String menuBounds);
+	public abstract void tsjiSelectionChanged(String range, String text, String handleBounds, String menuBounds, boolean flipped);
 	
 	/**
 	 * Sends the content width to the listener.  

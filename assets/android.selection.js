@@ -41,7 +41,7 @@ android.selection.clearSelection = function(){
 	   	var sel = window.getSelection();
 	   	sel.removeAllRanges();
 	}catch(err){
-		window.TextSelection.jsError(err);
+		window.TextSelection.jsError("clearSelection: " + err + "; "+ err.stack);
 	}	
 };
 
@@ -71,12 +71,12 @@ android.selection.longTouch = function() {
 	   	
 	   	
 	   	// Show the context menu in app
-	   	android.selection.selectionChanged();
+	   	android.selection.selectionChanged( false );
 	   	//android.selection.selectBetweenHandles();
 	   	
 	 }
 	 catch(err){
-	 	window.TextSelection.jsError(err);
+	 	window.TextSelection.jsError("longTouch: " + err + "; "+ err.stack);
 	 }
    	
 };
@@ -84,7 +84,7 @@ android.selection.longTouch = function() {
 /**
  * Tells the app to show the context menu. 
  */
-android.selection.selectionChanged = function(){
+android.selection.selectionChanged = function(flipped){
 
 	try{
 	
@@ -143,10 +143,10 @@ android.selection.selectionChanged = function(){
 	   	window.TextSelection.setContentWidth(document.body.clientWidth);
 	   	
 	   	// Tell the interface that the selection changed
-	   	window.TextSelection.selectionChanged(rangyRange, text, handleBounds, menuBounds);
+	   	window.TextSelection.selectionChanged(rangyRange, text, handleBounds, menuBounds, flipped);
 	}
 	catch(err){
-		window.TextSelection.jsError(err);
+		window.TextSelection.jsError("selectionChanged: " + err + "; "+ err.stack);
 	}
 };
 
@@ -191,7 +191,7 @@ android.selection.saveSelectionStart = function(){
 		
 		android.selection.selectionStartRange = saveRange;
 	}catch(err){
-		window.TextSelection.jsError(err);
+		window.TextSelection.jsError("saveSelectionStart: " + err + "; "+ err.stack);
 	}
 
 };
@@ -209,7 +209,7 @@ android.selection.saveSelectionEnd = function(){
 		
 		android.selection.selectionEndRange = saveRange;
 	}catch(err){
-		window.TextSelection.jsError(err);
+		window.TextSelection.jsError("saveSelectionEnd: " + err + "; " + err.stack);
 	}
 	
 };
@@ -226,7 +226,7 @@ android.selection.setStartPos = function(x, y){
 		
 		android.selection.selectBetweenHandles();
 	}catch(err){
-		window.TextSelection.jsError(err);
+		window.TextSelection.jsError("setStartPos: " + err + "; "+ err.stack);
 	}
 
 };
@@ -242,7 +242,7 @@ android.selection.setEndPos = function(x, y){
 		android.selection.selectBetweenHandles();
 	
 	}catch(err){
-		window.TextSelection.jsError(err);
+		window.TextSelection.jsError("setEndPos: " + err + "; "+ err.stack);
 	}
 
 };
@@ -257,38 +257,45 @@ android.selection.selectBetweenHandles = function(){
 		var endCaret = android.selection.selectionEndRange;
 		
 		// If we have two carets, update the selection
+		var flipped = false;
 		if (startCaret && endCaret) {
 		
 			// If end caret comes before start caret, need to flip
-			if(startCaret.compareBoundaryPoints (Range.START_TO_END, endCaret) > 0){
+			flipped = startCaret.compareBoundaryPoints (Range.START_TO_END, endCaret) > 0;
+			if( flipped ){
 				var temp = startCaret;
 				startCaret = endCaret;
 				endCaret = temp;
-				
-				android.selection.selectionStartRange = startCaret;
-				android.selection.selectionEndRange = endCaret;
 			}
 			
 			var range = document.createRange();
 			range.setStart(startCaret.startContainer, startCaret.startOffset);
 			range.setEnd(endCaret.startContainer, endCaret.startOffset);
-			
-			
 			android.selection.clearSelection();
-				
+			
 			var selection = window.getSelection();
 			selection.addRange(range);
-	
-			
-			
 		}
 		
-		android.selection.selectionChanged();
+		android.selection.selectionChanged(flipped);
    	}
    	catch(err){
-   		window.TextSelection.jsError(err);
+   		window.TextSelection.jsError("selectBetweenHandles: " + err + "; "+ err.stack);
    	}
 };
 
+/**
+ * Sets the last caret position for the end handle.
+ */
+android.selection.flipCarets = function(){
+	try{	
+		var temp = android.selection.selectionStartRange;
+		android.selection.selectionStartRange = android.selection.selectionEndRange;
+		android.selection.selectionEndRange = temp;
+	}catch(err){
+		window.TextSelection.jsError("flipCarets: " + err + "; "+ err.stack);
+	}
+
+};
 
 

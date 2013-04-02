@@ -356,6 +356,9 @@ public class DragController {
                 if (mLastDropTarget == dropTarget) {
                     dropTarget.onDragOver(mDragSource, coordinates[0], coordinates[1],
                         (int) mTouchOffsetX, (int) mTouchOffsetY, mDragView, mDragInfo);
+                    if (mListener != null) {
+                        mListener.onDragMove( (int) (coordinates[0] - mTouchOffsetX), (int) (coordinates[1] - mTouchOffsetY) );
+                    }
                 } else {
                     if (mLastDropTarget != null) {
                         mLastDropTarget.onDragExit(mDragSource, coordinates[0], coordinates[1],
@@ -418,7 +421,7 @@ public class DragController {
     }
 
     private boolean drop(float x, float y) {
-
+ 
         final int[] coordinates = mCoordinatesTemp;
         DropTarget dropTarget = findDropTarget((int) x, (int) y, coordinates);
 
