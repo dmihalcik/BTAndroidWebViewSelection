@@ -15,6 +15,8 @@ public interface DragListener {
      */
     void onDragStart(DragSource source, Object info, int dragAction);
     
+    void onDragMove();
+    
     /**
      * The drag has eneded
      */

@@ -112,9 +112,9 @@ android.selection.selectionChanged = function(){
 	   	
 	   	// Create the bounds json object for the selection
 	   	var handleBounds = "{'left': " + selectionStart.offset().left + ", ";
-	   	handleBounds += "'top': " + selectionStart.offset().top + ", ";
+	   	handleBounds += "'top': " + (selectionStart.offset().top + selectionStart.height())+ ", ";
 	   	handleBounds += "'right': " + selectionEnd.offset().left + ", ";
-	   	handleBounds += "'bottom': " + selectionEnd.offset().top + "}";
+	   	handleBounds += "'bottom': " + (selectionEnd.offset().top + selectionEnd.height())+ "}";
 	   	
 	   	
 	   	// Pull the spans

@@ -1,5 +1,7 @@
 package com.brandontate.androidwebviewselection;
 
+import java.util.Locale;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -15,8 +17,6 @@ import net.londatiga.android.QuickAction.OnDismissListener;
 import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.Region;
-import android.os.Handler;
-import android.os.Message;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -231,7 +231,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		//this.getSettings().setUseWideViewPort(true);
 		
 		// Javascript interfaces
-		this.textSelectionJSInterface = new TextSelectionJavascriptInterface(context, this);		
+		this.textSelectionJSInterface = new TextSelectionJavascriptInterface(this);		
 		this.addJavascriptInterface(this.textSelectionJSInterface, this.textSelectionJSInterface.getInterfaceName());
 		
 		
@@ -278,9 +278,9 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		
 		
 		this.mStartSelectionHandle = (ImageView) this.mSelectionDragLayer.findViewById(R.id.startHandle);
-		this.mStartSelectionHandle.setTag(new Integer(SELECTION_START_HANDLE));
+		this.mStartSelectionHandle.setTag( SELECTION_START_HANDLE );
 		this.mEndSelectionHandle = (ImageView) this.mSelectionDragLayer.findViewById(R.id.endHandle);
-		this.mEndSelectionHandle.setTag(new Integer(SELECTION_END_HANDLE));
+		this.mEndSelectionHandle.setTag( SELECTION_END_HANDLE );
 		
 		OnTouchListener handleTouchListener = new OnTouchListener(){
 
@@ -312,90 +312,55 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	}
 	
 	/**
-	 * Starts selection mode on the UI thread
-	 */
-	private Handler startSelectionModeHandler = new Handler(){
-		
-		public void handleMessage(Message m){
-	
-			if(mSelectionBounds == null)
-				return;
-			
-			addView(mSelectionDragLayer);
-			
-			drawSelectionHandles();
-
-			
-			int contentHeight = (int) Math.ceil(getDensityDependentValue(getContentHeight(), ctx));
-			
-			// Update Layout Params
-			ViewGroup.LayoutParams layerParams = mSelectionDragLayer.getLayoutParams();
-			layerParams.height = contentHeight;
-			layerParams.width = contentWidth;
-			mSelectionDragLayer.setLayoutParams(layerParams);
-			
-		}
-		
-	};
-	
-	/**
 	 * Starts selection mode.
 	 * 
 	 * @param	selectionBounds
 	 */
 	public void startSelectionMode(){
+		if(mSelectionBounds == null)
+			return;
 		
-		this.startSelectionModeHandler.sendEmptyMessage(0);
+		addView(mSelectionDragLayer);
 		
+		drawSelectionHandles();
+
+		
+		int contentHeight = (int) Math.ceil(getDensityDependentValue(getContentHeight(), ctx));
+		
+		// Update Layout Params
+		ViewGroup.LayoutParams layerParams = mSelectionDragLayer.getLayoutParams();
+		layerParams.height = contentHeight;
+		layerParams.width = contentWidth;
+		mSelectionDragLayer.setLayoutParams(layerParams);
 	}
-	
-	// Ends selection mode on the UI thread
-	private Handler endSelectionModeHandler = new Handler(){
-		public void handleMessage(Message m){
-		
-			removeView(mSelectionDragLayer);
-			if(getParent() != null && mContextMenu != null && contextMenuVisible){
-				// This will throw an error if the webview is being redrawn.
-				// No error handling needed, just need to stop the crash.
-				try{
-					mContextMenu.dismiss();
-				}
-				catch(Exception e){
-					
-				}
-			}
-			mSelectionBounds = null;
-			mLastTouchedSelectionHandle = -1;
-			loadUrl("javascript: android.selection.clearSelection();");
-			
-		}
-	};
 	
 	/**
 	 * Ends selection mode.
 	 */
 	public void endSelectionMode(){
-		
-		this.endSelectionModeHandler.sendEmptyMessage(0);
-		
+		removeView(mSelectionDragLayer);
+		if(getParent() != null && mContextMenu != null && contextMenuVisible){
+			// This will throw an error if the webview is being redrawn.
+			// No error handling needed, just need to stop the crash.
+			try{
+				mContextMenu.dismiss();
+			}
+			catch(Exception e){
+				
+			}
+		}
+		mSelectionBounds = null;
+		mLastTouchedSelectionHandle = -1;
+		loadUrl("javascript: android.selection.clearSelection();");
 	}
 	
 	/**
 	 * Calls the handler for drawing the selection handles.
 	 */
 	private void drawSelectionHandles(){
-		this.drawSelectionHandlesHandler.sendEmptyMessage(0);
-	}
-	
-	/**
-	 * Handler for drawing the selection handles on the UI thread.
-	 */
-	private Handler drawSelectionHandlesHandler = new Handler(){
-		public void handleMessage(Message m){
-			
 			MyAbsoluteLayout.LayoutParams startParams = (com.blahti.drag.MyAbsoluteLayout.LayoutParams) mStartSelectionHandle.getLayoutParams();
 			startParams.x = (int) (mSelectionBounds.left - mStartSelectionHandle.getDrawable().getIntrinsicWidth());
-			startParams.y = (int) (mSelectionBounds.top - mStartSelectionHandle.getDrawable().getIntrinsicHeight());
+			startParams.y = (int) (mSelectionBounds.top);
 		
 			// Stay on screen.
 			startParams.x = (startParams.x < 0) ? 0 : startParams.x;
@@ -414,7 +379,8 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 			mEndSelectionHandle.setLayoutParams(endParams);
 
 		}
-	};
+
+	private boolean dragging;
 	
 	/**
 	 * Checks to see if this view is in selection mode.
@@ -452,18 +418,29 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	public void onDragStart(DragSource source, Object info, int dragAction) {
 		// TODO Auto-generated method stub
 		
+		dragging = true;
+	}
+
+	@Override
+	public void onDragMove() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
 	public void onDragEnd() {
 		// TODO Auto-generated method stub
+		dragging = false;
+		saveDrag();
+	}
+	protected void saveDrag() {
 		
 		MyAbsoluteLayout.LayoutParams startHandleParams = (MyAbsoluteLayout.LayoutParams) this.mStartSelectionHandle.getLayoutParams();
 		MyAbsoluteLayout.LayoutParams endHandleParams = (MyAbsoluteLayout.LayoutParams) this.mEndSelectionHandle.getLayoutParams();
 		
 		float scale = getDensityIndependentValue(this.getScale(), ctx);
 		
-		float startX = startHandleParams.x - this.getScrollX();
+		float startX = startHandleParams.x - this.getScrollX() + mStartSelectionHandle.getWidth();
 		float startY = startHandleParams.y - this.getScrollY();
 		float endX = endHandleParams.x - this.getScrollX();
 		float endY = endHandleParams.y - this.getScrollY();
@@ -475,12 +452,12 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		
 		
 		if(mLastTouchedSelectionHandle == SELECTION_START_HANDLE && startX > 0 && startY > 0){
-			String saveStartString = String.format("javascript: android.selection.setStartPos(%f, %f);", startX, startY);
+			String saveStartString = String.format(Locale.US, "javascript: android.selection.setStartPos(%f, %f);", startX, startY);
 			this.loadUrl(saveStartString);
 		}
 			
 		if(mLastTouchedSelectionHandle == SELECTION_END_HANDLE && endX > 0 && endY > 0){
-			String saveEndString = String.format("javascript: android.selection.setEndPos(%f, %f);", endX, endY);
+			String saveEndString = String.format(Locale.US, "javascript: android.selection.setEndPos(%f, %f);", endX, endY);
 			this.loadUrl(saveEndString);
 		}
 		
@@ -667,8 +644,6 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 			this.showContextMenu(displayRect);
 			
 			drawSelectionHandles();
-			
-			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

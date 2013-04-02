@@ -1,6 +1,7 @@
 package com.brandontate.androidwebviewselection;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -19,17 +20,22 @@ public class TextSelectionJavascriptInterface {
 	
 	/** The webview to work with. */
 	private TextSelectionJavascriptInterfaceListener listener;
-	
-	/** The context. */
-	Context mContext;
-	
+
+	private Handler mHandler;
+
+	private Runnable mStartSelectionMode = new MyRunnable(){
+		@Override
+		protected void exec(TextSelectionJavascriptInterfaceListener listener) {
+			listener.tsjiStartSelectionMode();
+		}};
 	
 	/**
 	 * Constructor accepting context.
 	 * @param c
 	 */
-	public TextSelectionJavascriptInterface(Context c){
-		this.mContext = c;
+	public TextSelectionJavascriptInterface(){
+		super();
+		mHandler = new Handler();
 	}
 	
 	/**
@@ -37,8 +43,8 @@ public class TextSelectionJavascriptInterface {
 	 * @param c
 	 * @param listener
 	 */
-	public TextSelectionJavascriptInterface(Context c, TextSelectionJavascriptInterfaceListener listener){
-		this.mContext = c;
+	public TextSelectionJavascriptInterface(TextSelectionJavascriptInterfaceListener listener){
+		this();
 		this.listener = listener;
 	}
 	
@@ -46,10 +52,14 @@ public class TextSelectionJavascriptInterface {
 	 * Handles javascript errors.
 	 * @param error
 	 */
-	public void jsError(String error){
-		if(this.listener != null){
-			this.listener.tsjiJSError(error);
-		}
+	public void jsError(final String error){
+		if( null == listener ) return;
+		mHandler.post( new MyRunnable() {
+			@Override
+			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
+				listener.tsjiJSError( error );
+			}
+		} );
 	}
 	
 	/**
@@ -64,20 +74,31 @@ public class TextSelectionJavascriptInterface {
 	 * Put the app in "selection mode".
 	 */
 	public void startSelectionMode(){
-		
-		if(this.listener != null)
-			this.listener.tsjiStartSelectionMode();
-		
+		if( null == listener ) return;
+		mHandler.post( mStartSelectionMode );
+	}
+	
+	private abstract class MyRunnable implements Runnable {
+		@Override
+		public void run() {
+			if(listener == null) return;
+			exec(listener);
+		}
+
+		protected abstract void exec(TextSelectionJavascriptInterfaceListener listener);
 	}
 	
 	/**
 	 * Take the app out of "selection mode".
 	 */
 	public void endSelectionMode(){
-		
-		if(this.listener != null)
-			this.listener.tsjiEndSelectionMode();
-		
+		if( null == listener ) return;
+		mHandler.post( new MyRunnable() {
+			@Override
+			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
+				listener.tsjiEndSelectionMode();
+			}
+		} );
 	}
 	
 	/**
@@ -88,15 +109,24 @@ public class TextSelectionJavascriptInterface {
 	 * @param showHighlight
 	 * @param showUnHighlight
 	 */
-	public void selectionChanged(String range, String text, String handleBounds, String menuBounds){
-		if(this.listener != null)
-			this.listener.tsjiSelectionChanged(range, text, handleBounds, menuBounds);
-		
+	public void selectionChanged(final String range, final String text, final String handleBounds, final String menuBounds){
+		if( null == listener ) return;
+		mHandler.post( new MyRunnable() {
+			@Override
+			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
+				listener.tsjiSelectionChanged(range, text, handleBounds, menuBounds);
+			}
+		} );
 	}
 	
-	public void setContentWidth(float contentWidth){
-		if(this.listener != null)
-			this.listener.tsjiSetContentWidth(contentWidth);
+	public void setContentWidth(final float contentWidth){
+		if( null == listener ) return;
+		mHandler.post( new MyRunnable() {
+			@Override
+			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
+				listener.tsjiSetContentWidth(contentWidth);
+			}
+		} );
 	}
 	
 }
