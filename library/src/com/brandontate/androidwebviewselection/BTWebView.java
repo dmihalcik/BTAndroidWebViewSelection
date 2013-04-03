@@ -495,9 +495,10 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	
 	/**
 	 * Shows the context menu using the given region as an anchor point.
+	 * @param etc 
 	 * @param region
 	 */
-	private void showContextMenu(Rect displayRect){
+	private void showContextMenu(Rect displayRect, JSONObject etc){
 		
 		// Don't show this twice
 		if(this.contextMenuVisible){
@@ -513,7 +514,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		// The action menu
 		mContextMenu  = new QuickAction(this.getContext());
 		mContextMenu.setOnDismissListener(this);
-		contextMenuVisible = popupListener.onPrepareMenu( mContextMenu );
+		contextMenuVisible = popupListener.onPrepareMenu( mContextMenu, etc );
 		if( contextMenuVisible )
 			mContextMenu.show(this, displayRect);
 	}
@@ -613,7 +614,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 			}
 			
 			// This will send the menu rect
-			this.showContextMenu(displayRect);
+			this.showContextMenu(displayRect, etc);
 			
 			drawSelectionHandles();
 			if(flipped) {

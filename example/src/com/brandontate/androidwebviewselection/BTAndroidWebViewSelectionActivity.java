@@ -6,6 +6,7 @@ import net.londatiga.android.QuickPopupListener;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import org.json.JSONObject;
 
 public class BTAndroidWebViewSelectionActivity extends Activity {
 	private static final String TAG = "BTWebView";
@@ -25,7 +26,7 @@ public class BTAndroidWebViewSelectionActivity extends Activity {
 		webView.setPopupListener( new QuickPopupListener() {
 			
 			@Override
-			public boolean onPrepareMenu(final QuickAction mContextMenu) {
+			public boolean onPrepareMenu(final QuickAction mContextMenu, JSONObject etc ) {
 				
 				// Add buttons
 				//Copy action item
