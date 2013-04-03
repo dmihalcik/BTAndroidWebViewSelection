@@ -1,3 +1,4 @@
+
 // Namespace
 var android = {};
 android.selection = {};
@@ -142,8 +143,13 @@ android.selection.selectionChanged = function(flipped){
 	   	// Set the content width
 	   	window.TextSelection.setContentWidth(document.body.clientWidth);
 	   	
+	   	var etc = {};
+	   	if( android.selection.getInfo ) {
+	   		etc = JSON.stringify( android.selection.getInfo() );
+	   	}
+	   	
 	   	// Tell the interface that the selection changed
-	   	window.TextSelection.selectionChanged(rangyRange, text, handleBounds, menuBounds, flipped);
+	   	window.TextSelection.selectionChanged(rangyRange, text, handleBounds, menuBounds, flipped, etc);
 	}
 	catch(err){
 		window.TextSelection.jsError("selectionChanged: " + err + "; "+ err.stack);

@@ -1,5 +1,8 @@
 package com.brandontate.androidwebviewselection;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.os.Handler;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -116,13 +119,24 @@ public class TextSelectionJavascriptInterface {
 	 * @param showUnHighlight
 	 */
 	@JavascriptInterface
-	public void selectionChanged(final String range, final String text, final String handleBounds, final String menuBounds, final boolean flipped){
+	public void selectionChanged(final String range, final String text, 
+			final String handleBounds, final String menuBounds, 
+			final boolean flipped, final String obj ){
 		if( D ) Log.v( TAG, "selectionChanged(\"" + range + "\", \"" + text + "\", \"" + handleBounds + "\", \"" + menuBounds + "\", " + flipped + ")" );
 		if( null == listener ) return;
+		JSONObject j;
+		try {
+			j = new JSONObject( obj );
+		} catch (JSONException e) {
+			Log.e(TAG, "Unable to handle selection etc data: " + obj);
+			j = null;
+		}
+		final JSONObject json = j;
 		mHandler.post( new MyRunnable() {
 			@Override
 			protected void exec(TextSelectionJavascriptInterfaceListener listener) {
-				listener.tsjiSelectionChanged(range, text, handleBounds, menuBounds, flipped);
+				listener.tsjiSelectionChanged( range, text, handleBounds,
+						menuBounds, flipped, json );
 			}
 		} );
 	}

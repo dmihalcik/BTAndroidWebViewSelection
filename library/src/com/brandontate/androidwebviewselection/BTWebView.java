@@ -2,18 +2,13 @@ package com.brandontate.androidwebviewselection;
 
 import java.util.Locale;
 
+import net.londatiga.android.QuickAction;
+import net.londatiga.android.QuickAction.OnDismissListener;
+import net.londatiga.android.QuickPopupListener;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.blahti.drag.DragController;
-import com.blahti.drag.DragLayer;
-import com.blahti.drag.DragListener;
-import com.blahti.drag.DragSource;
-import com.blahti.drag.MyAbsoluteLayout;
-
-import net.londatiga.android.ActionItem;
-import net.londatiga.android.QuickAction;
-import net.londatiga.android.QuickAction.OnDismissListener;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
@@ -25,13 +20,19 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnTouchListener;
 import android.view.View.OnLongClickListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ImageView;
+
+import com.blahti.drag.DragController;
+import com.blahti.drag.DragLayer;
+import com.blahti.drag.DragListener;
+import com.blahti.drag.DragSource;
+import com.blahti.drag.MyAbsoluteLayout;
 
 public class BTWebView extends WebView implements TextSelectionJavascriptInterfaceListener, 
 	OnTouchListener, OnLongClickListener, OnDismissListener, DragListener{
@@ -41,28 +42,27 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 
 	private static final boolean D = false;
 
-	/** Context. */
-	protected	Context	ctx;
-	
 	protected float mCurrentScale = 0;
 	
 	/** The context menu. */
-	private QuickAction mContextMenu;
+	protected QuickAction mContextMenu;
+	
+	protected QuickPopupListener popupListener;
 	
 	/** The drag layer for selection. */
-	private DragLayer mSelectionDragLayer;
+	protected DragLayer mSelectionDragLayer;
 	
 	/** The drag controller for selection. */
-	private DragController mDragController;
+	protected DragController mDragController;
 	
 	/** The start selection handle. */
-	private ImageView mStartSelectionHandle;
+	protected ImageView mStartSelectionHandle;
 	
 	/** the end selection handle. */
-	private ImageView mEndSelectionHandle;
+	protected ImageView mEndSelectionHandle;
 	
 	/** The selection bounds. */
-	private Rect mSelectionBounds = null;
+	protected Rect mSelectionBounds = null;
 	
 	/** The selected range. */
 	protected String selectedRange = "";
@@ -84,35 +84,38 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	
 	
 	/** Identifier for the selection start handle. */
-	private final int SELECTION_START_HANDLE = 0;
+	protected final int SELECTION_START_HANDLE = 0;
 	
 	/** Identifier for the selection end handle. */
-	private final int SELECTION_END_HANDLE = 1;
+	protected final int SELECTION_END_HANDLE = 1;
 	
 	/** Last touched selection handle. */
-	private int mLastTouchedSelectionHandle = -1;
+	protected int mLastTouchedSelectionHandle = -1;
 	
+	private boolean mScrolling = false;
+	private float mScrollDiffY = 0;
+	private float mLastTouchY = 0;
+	private float mScrollDiffX = 0;
+	private float mLastTouchX = 0;
 	
+	/// if the user is currently dragging a handle around
+	private boolean dragging;
+	// Number of active 'loadUrl(javascript:)' we are waiting for
+	private int eventsActive = 0;
 	
 	public BTWebView(Context context) {
 		super(context);
-		
-		this.ctx = context;
 		this.setup(context);
 	}
 	
 	public BTWebView(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		
-		this.ctx = context;
 		this.setup(context);
 		
 	}
 
 	public BTWebView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		
-		this.ctx = context;
 		this.setup(context);
 	
 	}
@@ -124,15 +127,9 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	//*
 	//*****************************************************
 	
-	private boolean mScrolling = false;
-	private float mScrollDiffY = 0;
-	private float mLastTouchY = 0;
-	private float mScrollDiffX = 0;
-	private float mLastTouchX = 0;
-	
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
-		
+		Context ctx = getContext();
 		float xPoint = getDensityIndependentValue(event.getX(), ctx) / getDensityIndependentValue(currentScale(), ctx);
 		float yPoint = getDensityIndependentValue(event.getY(), ctx) / getDensityIndependentValue(currentScale(), ctx);
 		
@@ -331,6 +328,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		drawSelectionHandles();
 
 		
+		Context ctx = getContext();
 		int contentHeight = (int) Math.ceil(getDensityDependentValue(getContentHeight(), ctx));
 		
 		// Update Layout Params
@@ -386,9 +384,6 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 
 		}
 
-	private boolean dragging;
-	private int eventsActive = 0;
-	
 	/**
 	 * Checks to see if this view is in selection mode.
 	 * @return
@@ -466,6 +461,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	}
 
 	public void saveSelectionEnd(float x, float y) {
+		Context ctx = getContext();
 		final float scale = getDensityIndependentValue(currentScale(), ctx);
 		float endX = getDensityIndependentValue(x, ctx) / scale;
 		float endY = getDensityIndependentValue(y, ctx) / scale;
@@ -478,6 +474,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	}
 
 	public void saveSelectionStart(float x, float y) {
+		Context ctx = getContext();
 		final float scale = getDensityIndependentValue(currentScale(), ctx);
 		final float startX = getDensityIndependentValue(x, ctx) / scale;
 		final float startY = getDensityIndependentValue(y, ctx) / scale;
@@ -513,72 +510,15 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 			return;
 		}
 		
-		
-		
-		//Copy action item
-		ActionItem buttonOne = new ActionItem();
-		 
-		buttonOne.setTitle("Button 1");
-		buttonOne.setActionId(1);
-		buttonOne.setIcon(getResources().getDrawable(R.drawable.menu_search));
-		
-		 
-		//Highlight action item
-		ActionItem buttonTwo = new ActionItem();
-		 
-		buttonTwo.setTitle("Button 2");
-		buttonTwo.setActionId(2);
-		buttonTwo.setIcon(getResources().getDrawable(R.drawable.menu_info));
-		
-		ActionItem buttonThree = new ActionItem();
-		
-		buttonThree.setTitle("Button 3");
-		buttonThree.setActionId(3);
-		buttonThree.setIcon(getResources().getDrawable(R.drawable.menu_eraser));
-		 
-		
-		
 		// The action menu
 		mContextMenu  = new QuickAction(this.getContext());
 		mContextMenu.setOnDismissListener(this);
-		
-		// Add buttons
-		mContextMenu.addActionItem(buttonOne);
-		
-		mContextMenu.addActionItem(buttonTwo);
-		
-		mContextMenu.addActionItem(buttonThree);
-		
-		
-		
-		//setup the action item click listener
-		mContextMenu.setOnActionItemClickListener(new QuickAction.OnActionItemClickListener() {
-		    
-			@Override
-			public void onItemClick(QuickAction source, int pos,
-				int actionId) {
-				// TODO Auto-generated method stub
-				if (actionId == 1) { 
-					// Do Button 1 stuff
-					Log.i(TAG, "Hit Button 1");
-		        } 
-				else if (actionId == 2) { 
-					// Do Button 2 stuff
-					Log.i(TAG, "Hit Button 2");
-		        } 
-		        else if (actionId == 3) { 
-		        	// Do Button 3 stuff
-					Log.i(TAG, "Hit Button 3");
-		        }
-				
-				contextMenuVisible = false;
-					
-			}
-			
-		});
-		
-		this.contextMenuVisible = true;
-		mContextMenu.show(this, displayRect);
+		contextMenuVisible = popupListener.onPrepareMenu( mContextMenu );
+		if( contextMenuVisible )
+			mContextMenu.show(this, displayRect);
+	}
+	public void setPopupListener(QuickPopupListener popupListener) {
+		this.popupListener = popupListener;
 	}
 	
 	
@@ -638,13 +578,16 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	 * @param showHighlight
 	 * @param showUnHighlight
 	 */
-	public void tsjiSelectionChanged(String range, String text, String handleBounds, String menuBounds, boolean flipped){
+	public void tsjiSelectionChanged(String range, String text, 
+			String handleBounds, String menuBounds, boolean flipped, 
+			JSONObject etc){
 		eventsActive--;
 		if( dragging ) return;
 		if( 0 < eventsActive ) return;
 		try {
 			JSONObject selectionBoundsObject = new JSONObject(handleBounds);
 			
+			Context ctx = getContext();
 			float scale = getDensityIndependentValue(currentScale(), ctx);
 			
 			Rect handleRect = new Rect();
@@ -690,6 +633,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	 * Receives the content width for the page.
 	 */
 	public void tsjiSetContentWidth(float contentWidth){
+		Context ctx = getContext();
 		this.contentWidth = (int) this.getDensityDependentValue(contentWidth, ctx);
 	}
 

@@ -1,5 +1,7 @@
 package com.brandontate.androidwebviewselection;
 
+import org.json.JSONObject;
+
 public interface TextSelectionJavascriptInterfaceListener {
 
 	/**
@@ -29,7 +31,9 @@ public interface TextSelectionJavascriptInterfaceListener {
 	 * @param menuBounds
 	 * @param flipped 
 	 */
-	public abstract void tsjiSelectionChanged(String range, String text, String handleBounds, String menuBounds, boolean flipped);
+	public abstract void tsjiSelectionChanged(String range, String text, 
+			String handleBounds, String menuBounds, boolean flipped,
+			JSONObject etc);
 	
 	/**
 	 * Sends the content width to the listener.  
