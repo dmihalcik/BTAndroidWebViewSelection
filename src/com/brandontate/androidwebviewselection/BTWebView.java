@@ -14,9 +14,10 @@ import com.blahti.drag.MyAbsoluteLayout;
 import net.londatiga.android.ActionItem;
 import net.londatiga.android.QuickAction;
 import net.londatiga.android.QuickAction.OnDismissListener;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
-import android.graphics.Region;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -28,8 +29,8 @@ import android.view.View.OnTouchListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.ImageView;
 
 public class BTWebView extends WebView implements TextSelectionJavascriptInterfaceListener, 
@@ -139,7 +140,8 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		
 		if(event.getAction() == MotionEvent.ACTION_DOWN){
 			
-			String startTouchUrl = String.format("javascript:android.selection.startTouch(%f, %f);", 
+			String startTouchUrl = String.format(Locale.US,
+					"javascript:android.selection.startTouch(%f, %f);", 
 					xPoint, yPoint);
 			
 			mLastTouchX = xPoint;
@@ -209,10 +211,6 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		return true;
 	}
 	
-	
-	
-	
-	
 	//*****************************************************
 	//*
 	//*		Setup
@@ -224,17 +222,14 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	 * @param context
 	 */
 	protected void setup(Context context){
-		
-		
 		// On Touch Listener
 		this.setOnLongClickListener(this);
 		this.setOnTouchListener(this);
 	
 		
 		// Webview setup
-		this.getSettings().setJavaScriptEnabled(true);
-		this.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
-		this.getSettings().setPluginsEnabled(true);
+		WebSettings settings = this.getSettings();
+		configureWebViewSettings( settings );
 		
 		// Zoom out fully
 		//this.getSettings().setLoadWithOverviewMode(true);
@@ -244,23 +239,23 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		this.textSelectionJSInterface = new TextSelectionJavascriptInterface(this);		
 		this.addJavascriptInterface(this.textSelectionJSInterface, this.textSelectionJSInterface.getInterfaceName());
 		
-		this.setWebViewClient( new WebViewClient() {
-			public void onScaleChanged(WebView view, float oldScale, float newScale) {
-				mCurrentScale = newScale;
-			}
-		} );
+		this.setWebViewClient( new BTWebViewClient(this) );
 		
 		
 		// Create the selection handles
 		createSelectionLayer(context);
-		
-		
-		// Load up the android asset file
-		String filePath = "file:///android_asset/content.html";
-		
-		// Load the url
-		this.loadUrl(filePath);
-		
+	}
+
+	@SuppressWarnings("deprecation")
+	@SuppressLint( "SetJavaScriptEnabled" )
+	protected void configureWebViewSettings(WebSettings settings) {
+		settings.setJavaScriptEnabled(true);
+		settings.setJavaScriptCanOpenWindowsAutomatically(true);
+		if( Build.VERSION.SDK_INT < 8 ) {
+			settings.setPluginsEnabled(true);
+		} else {
+			settings.setPluginState( WebSettings.PluginState.ON_DEMAND );
+		}
 	}
 	
 	

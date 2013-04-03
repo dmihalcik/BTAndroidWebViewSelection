@@ -1,8 +1,8 @@
 package com.brandontate.androidwebviewselection;
 
-import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
+import android.webkit.JavascriptInterface;
 
 /**
  * This javascript interface allows the page to communicate that text has been selected by the user.
@@ -14,6 +14,8 @@ public class TextSelectionJavascriptInterface {
 
 	/** The TAG for logging. */
 	private static final String TAG = "TextSelectionJavascriptInterface";
+
+	private static final boolean D = false;
 	
 	/** The javascript interface name for adding to web view. */
 	private final String interfaceName = "TextSelection";
@@ -46,7 +48,9 @@ public class TextSelectionJavascriptInterface {
 	 * Handles javascript errors.
 	 * @param error
 	 */
+	@JavascriptInterface
 	public void jsError(final String error){
+		if( D ) Log.e( TAG, error );
 		if( null == listener ) return;
 		mHandler.post( new MyRunnable() {
 			@Override
@@ -67,7 +71,9 @@ public class TextSelectionJavascriptInterface {
 	/**
 	 * Put the app in "selection mode".
 	 */
+	@JavascriptInterface
 	public void startSelectionMode(){
+		if( D ) Log.i( TAG, "startSelectionMode()" );
 		if( null == listener ) return;
 		mHandler.post( new MyRunnable(){
 			@Override
@@ -89,7 +95,9 @@ public class TextSelectionJavascriptInterface {
 	/**
 	 * Take the app out of "selection mode".
 	 */
+	@JavascriptInterface
 	public void endSelectionMode(){
+		if( D ) Log.i( TAG, "endSelectionMode()" );
 		if( null == listener ) return;
 		mHandler.post( new MyRunnable() {
 			@Override
@@ -107,7 +115,9 @@ public class TextSelectionJavascriptInterface {
 	 * @param showHighlight
 	 * @param showUnHighlight
 	 */
+	@JavascriptInterface
 	public void selectionChanged(final String range, final String text, final String handleBounds, final String menuBounds, final boolean flipped){
+		if( D ) Log.v( TAG, "selectionChanged(\"" + range + "\", \"" + text + "\", \"" + handleBounds + "\", \"" + menuBounds + "\", " + flipped + ")" );
 		if( null == listener ) return;
 		mHandler.post( new MyRunnable() {
 			@Override
@@ -117,7 +127,9 @@ public class TextSelectionJavascriptInterface {
 		} );
 	}
 	
+	@JavascriptInterface
 	public void setContentWidth(final float contentWidth){
+		if( D ) Log.v( TAG, "setContentWidth(" + contentWidth + ")" );
 		if( null == listener ) return;
 		mHandler.post( new MyRunnable() {
 			@Override

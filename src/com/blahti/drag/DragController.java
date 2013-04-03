@@ -19,20 +19,19 @@
 
 package com.blahti.drag;
 
+import java.util.ArrayList;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.IBinder;
-import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.View;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-
-import java.util.ArrayList;
 
 /**
  * This class is used to initiate a drag within a view or across multiple views.
@@ -50,8 +49,6 @@ public class DragController {
 
     /** Indicates the drag is a copy.  */
     public static int DRAG_ACTION_COPY = 1;
-
-    private static final int VIBRATE_DURATION = 35;
 
     private static final boolean PROFILE_DRAWING_DURING_DRAG = false;
 

@@ -26,6 +26,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.os.IBinder;
+import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,13 +49,29 @@ public class DragView extends View
     private int mRegistrationX;
     private int mRegistrationY;
 
-    private float mScale;
     private float mAnimationScale = 1.0f;
 
     private WindowManager.LayoutParams mLayoutParams;
     private WindowManager mWindowManager;
+    
+    
 
-    /**
+    public DragView(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
+		throw new IllegalStateException();
+	}
+
+	public DragView(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		throw new IllegalStateException();
+	}
+
+	public DragView(Context context) {
+		super(context);
+		throw new IllegalStateException();
+	}
+
+	/**
      * Construct the drag view.
      * <p>
      * The registration point is the point inside our view that the touch events should
@@ -74,7 +91,7 @@ public class DragView extends View
   
         Matrix scale = new Matrix();
         float scaleFactor = width;
-        scaleFactor = mScale = (scaleFactor + DRAG_SCALE) / scaleFactor;
+        scaleFactor = (scaleFactor + DRAG_SCALE) / scaleFactor;
         scale.setScale(scaleFactor, scaleFactor);
         mBitmap = Bitmap.createBitmap(bitmap, left, top, width, height, scale, true);
 

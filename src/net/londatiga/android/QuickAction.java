@@ -1,29 +1,24 @@
 package net.londatiga.android;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.Context;
-
 import android.graphics.Rect;
-import android.graphics.Region;
 import android.graphics.drawable.Drawable;
-
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.ScrollView;
-import android.widget.RelativeLayout;
-import android.widget.PopupWindow.OnDismissListener;
-
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
-import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
-
-import java.util.List;
-import java.util.ArrayList;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.ImageView;
+import android.widget.PopupWindow.OnDismissListener;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 import com.brandontate.androidwebviewselection.R;
 
@@ -64,6 +59,7 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 	public static final int ANIM_GROW_FROM_CENTER = 3;
 	public static final int ANIM_REFLECT = 4;
 	public static final int ANIM_AUTO = 5;
+	private static final boolean ENABLE_ARROW = false;
 	
     /**
      * Constructor for default vertical layout
@@ -232,7 +228,7 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 		if (mOrientation == HORIZONTAL && mChildPos != 0) {
             View separator = mInflater.inflate(R.layout.horiz_separator, null);
             
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.FILL_PARENT);
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
             
             separator.setLayoutParams(params);
             separator.setPadding(5, 0, 5, 0);
@@ -282,7 +278,9 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 			rootWidth		= mRootView.getMeasuredWidth();
 		}
 		
+		@SuppressWarnings("deprecation")
 		int screenWidth 	= mWindowManager.getDefaultDisplay().getWidth();
+		@SuppressWarnings("deprecation")
 		int screenHeight	= mWindowManager.getDefaultDisplay().getHeight();
 		
 		//automatically get X coord of popup (top left)
@@ -328,7 +326,9 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 		}
 		
 		
-		//showArrow(((onTop) ? R.id.arrow_down : R.id.arrow_up), arrowPos);
+		if( ENABLE_ARROW ) {
+			showArrow(((onTop) ? R.id.arrow_down : R.id.arrow_up), arrowPos);
+		}
 		
 		// No arrows
 		mArrowUp.setVisibility(View.INVISIBLE);
@@ -337,7 +337,6 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 		setAnimationStyle(screenWidth, anchorRect.centerX(), onTop);
 		
 		mWindow.showAtLocation(parent, Gravity.NO_GRAVITY, xPos, yPos);
-		
 	}
 	
 	/**
@@ -368,7 +367,10 @@ public class QuickAction extends PopupWindows implements OnDismissListener {
 			rootWidth		= mRootView.getMeasuredWidth();
 		}
 		
+		// In API 13, these are replaced with getSize
+		@SuppressWarnings("deprecation")
 		int screenWidth 	= mWindowManager.getDefaultDisplay().getWidth();
+		@SuppressWarnings("deprecation")
 		int screenHeight	= mWindowManager.getDefaultDisplay().getHeight();
 		
 		//automatically get X coord of popup (top left)

@@ -1,6 +1,5 @@
 package com.blahti.drag;
 
-import android.view.View;
 
 /**
  * Interface to receive notifications when a drag starts or stops
