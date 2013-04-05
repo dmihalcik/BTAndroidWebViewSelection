@@ -2,14 +2,11 @@ package com.brandontate.androidwebviewselection;
 
 import java.util.Locale;
 
-import net.londatiga.android.QuickAction;
-import net.londatiga.android.QuickAction.OnDismissListener;
-import net.londatiga.android.QuickPopupListener;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
@@ -28,6 +25,13 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ImageView;
 
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.app.SherlockExpandableListActivity;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.actionbarsherlock.app.SherlockListActivity;
+import com.actionbarsherlock.app.SherlockPreferenceActivity;
+import com.actionbarsherlock.view.ActionMode;
+import com.actionbarsherlock.view.ActionMode.Callback;
 import com.blahti.drag.DragController;
 import com.blahti.drag.DragLayer;
 import com.blahti.drag.DragListener;
@@ -35,7 +39,7 @@ import com.blahti.drag.DragSource;
 import com.blahti.drag.MyAbsoluteLayout;
 
 public class BTWebView extends WebView implements TextSelectionJavascriptInterfaceListener, 
-	OnTouchListener, OnLongClickListener, OnDismissListener, DragListener{
+	OnTouchListener, OnLongClickListener, DragListener{
 	
 	/** The logging tag. */
 	private static final String TAG = "BTWebView";
@@ -45,9 +49,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	protected float mCurrentScale = 0;
 	
 	/** The context menu. */
-	protected QuickAction mContextMenu;
-	
-	protected QuickPopupListener popupListener;
+	protected Object popupListener;
 	
 	/** The drag layer for selection. */
 	protected DragLayer mSelectionDragLayer;
@@ -77,7 +79,7 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	protected boolean inSelectionMode = false;
 	
 	/** Flag to stop from showing context menu twice. */
-	protected boolean contextMenuVisible = false;
+	protected Object actionMode;
 	
 	/** The current content width. */
 	protected int contentWidth = 0;
@@ -102,6 +104,8 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	private boolean dragging;
 	// Number of active 'loadUrl(javascript:)' we are waiting for
 	private int eventsActive = 0;
+
+	private JSONObject actionInfo;
 	
 	public BTWebView(Context context) {
 		super(context);
@@ -341,17 +345,16 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	/**
 	 * Ends selection mode.
 	 */
+	@SuppressLint("NewApi")
 	public void endSelectionMode(){
 		removeView(mSelectionDragLayer);
-		if(getParent() != null && mContextMenu != null && contextMenuVisible){
-			// This will throw an error if the webview is being redrawn.
-			// No error handling needed, just need to stop the crash.
-			try{
-				mContextMenu.dismiss();
-			}
-			catch(Exception e){
-				
-			}
+		if(null != actionMode){
+			if( actionMode instanceof ActionMode ) {
+				((ActionMode) actionMode).finish();
+			} else {
+				( (android.view.ActionMode) actionMode ).finish();
+			} 
+			actionMode = null;
 		}
 		mSelectionBounds = null;
 		mLastTouchedSelectionHandle = -1;
@@ -498,10 +501,11 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	 * @param etc 
 	 * @param region
 	 */
+	@SuppressLint("NewApi")
 	private void showContextMenu(Rect displayRect, JSONObject etc){
 		
 		// Don't show this twice
-		if(this.contextMenuVisible){
+		if(null != actionMode){
 			return;
 		}
 		
@@ -511,30 +515,35 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 			return;
 		}
 		
+		this.actionInfo = etc;
+		
 		// The action menu
-		mContextMenu  = new QuickAction(this.getContext());
-		mContextMenu.setOnDismissListener(this);
-		contextMenuVisible = popupListener.onPrepareMenu( mContextMenu, etc );
-		if( contextMenuVisible )
-			mContextMenu.show(this, displayRect);
+		Context ctx = getContext();
+		if(getParent() != null && ctx != null){
+			if( ctx instanceof SherlockFragmentActivity ) {
+				actionMode = ((SherlockFragmentActivity) ctx).startActionMode( (ActionMode.Callback) popupListener );
+			} else if( ctx instanceof SherlockActivity ) {
+				actionMode = ((SherlockActivity) ctx).startActionMode( (ActionMode.Callback) popupListener );
+			} else if( ctx instanceof SherlockPreferenceActivity) {
+				actionMode = ((SherlockPreferenceActivity) ctx).startActionMode( (ActionMode.Callback) popupListener );
+			} else if( ctx instanceof SherlockExpandableListActivity) {
+				actionMode = ((SherlockExpandableListActivity) ctx).startActionMode( (Callback) popupListener );
+			} else if( ctx instanceof SherlockListActivity) {
+				actionMode = ((SherlockListActivity) ctx).startActionMode( (Callback) popupListener );
+			} else if( ctx instanceof Activity ) {
+				actionMode = ((Activity) ctx).startActionMode( (android.view.ActionMode.Callback) popupListener );
+			} 
+		}
 	}
-	public void setPopupListener(QuickPopupListener popupListener) {
+	
+	public JSONObject getActionInfo() {
+		return actionInfo;
+	}
+	public void setSupportPopupListener(ActionMode.Callback popupListener) {
 		this.popupListener = popupListener;
 	}
-	
-	
-	//*****************************************************
-	//*
-	//*		OnDismiss Listener
-	//*
-	//*****************************************************
-	
-	/**
-	 * Clears the selection when the context menu is dismissed.
-	 */
-	public void onDismiss(){
-		//clearSelection();
-		this.contextMenuVisible = false;
+	public void setPopupListener(android.view.ActionMode.Callback popupListener) {
+		this.popupListener = popupListener;
 	}
 	
 	//*****************************************************
