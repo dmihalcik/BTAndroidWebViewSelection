@@ -184,5 +184,15 @@ public class DragView extends View
     void remove() {
         mWindowManager.removeView(this);
     }
+
+	@Override
+	public boolean canScrollHorizontally(int direction) {
+		return true;
+	}
+	
+	@Override
+	public boolean canScrollVertically(int direction) {
+		return true;
+	}
 }
 

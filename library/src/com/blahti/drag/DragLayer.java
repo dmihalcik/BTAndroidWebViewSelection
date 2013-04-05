@@ -198,5 +198,14 @@ public Rect estimateDropLocation(DragSource source, int x, int y, int xOffset, i
     return null;
 }
 
+@Override
+public boolean canScrollHorizontally(int direction) {
+	return true;
+}
+
+@Override
+public boolean canScrollVertically(int direction) {
+	return true;
+}
 
 } // end class

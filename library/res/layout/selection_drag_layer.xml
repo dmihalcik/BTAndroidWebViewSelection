@@ -6,7 +6,7 @@
 	android:layout_height="match_parent"
 	android:background="@android:color/transparent" >
 
-	<ImageView
+	<com.brandontate.androidwebviewselection.DraggableImageView
 		android:id="@+id/startHandle"
 		android:src="@drawable/selection_handle_left"
 		android:layout_width="37dp"
@@ -14,7 +14,7 @@
 		android:scaleType="center" 
 		android:contentDescription="@string/selection_start"
 		/>
-	<ImageView
+	<com.brandontate.androidwebviewselection.DraggableImageView
 		android:id="@+id/endHandle"
 		android:src="@drawable/selection_handle_right"
 		android:layout_width="37dp"
