@@ -350,11 +350,14 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		removeView(mSelectionDragLayer);
 		if(null != actionMode){
 			if( actionMode instanceof ActionMode ) {
-				((ActionMode) actionMode).finish();
+				ActionMode t = (ActionMode) actionMode;
+				actionMode = null;
+				t.finish();
 			} else {
-				( (android.view.ActionMode) actionMode ).finish();
+				android.view.ActionMode t = (android.view.ActionMode) actionMode;
+				actionMode = null;
+				t.finish();
 			} 
-			actionMode = null;
 		}
 		mSelectionBounds = null;
 		mLastTouchedSelectionHandle = -1;
@@ -503,9 +506,17 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 	 */
 	@SuppressLint("NewApi")
 	private void showContextMenu(Rect displayRect, JSONObject etc){
+		this.actionInfo = etc;
 		
 		// Don't show this twice
 		if(null != actionMode){
+			if( actionMode instanceof ActionMode ) {
+				ActionMode t = (ActionMode) actionMode;
+				t.invalidate();
+			} else {
+				android.view.ActionMode t = (android.view.ActionMode) actionMode;
+				t.invalidate();
+			} 
 			return;
 		}
 		
@@ -514,8 +525,6 @@ public class BTWebView extends WebView implements TextSelectionJavascriptInterfa
 		if(displayRect.right <= displayRect.left){
 			return;
 		}
-		
-		this.actionInfo = etc;
 		
 		// The action menu
 		Context ctx = getContext();

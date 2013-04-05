@@ -59,6 +59,7 @@ public class BTAndroidWebViewSelectionActivity extends SherlockActivity {
 
 			@Override
 			public void onDestroyActionMode(ActionMode mode) {
+				webView.endSelectionMode();
 			}});
 	}
 }
